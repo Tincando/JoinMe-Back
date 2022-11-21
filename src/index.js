@@ -10,25 +10,45 @@ const port = 3000; // port na kojem će web server slušati
 app.use(cors(), express.json());
 
 app.get("/posts", async (req, res) => {
-  let query = req.query;
-  let filter = {};
-  if (query.title) {
-    filter["title"] = new RegExp(query.title);
-  }
-  console.log("Filter za Mongo", filter);
-
   let db = await connect();
-  let cursor = await db
-    .collection("events")
-    .find(filter)
-    .sort({ postedAt: -1 });
+  let query = req.query;
+
+  let selekcija = {};
+
+  if (query._any) {
+    // za upit: /posts?_all=pojam1 pojam2
+    let pretraga = query._any;
+    let terms = pretraga.split(" ");
+
+    let atributi = ["title", "createdBy"];
+
+    selekcija = {
+      $and: [],
+    };
+
+    terms.forEach((term) => {
+      let or = {
+        $or: [],
+      };
+
+      atributi.forEach((atribut) => {
+        or.$or.push({
+          [atribut.toLocaleLowerCase()]: new RegExp(term.toLocaleLowerCase()),
+        });
+      });
+      selekcija.$and.push(or);
+    });
+  }
+  console.log("Selekcija", selekcija);
+
+  let cursor = await db.collection("events").find(selekcija);
   let results = await cursor.toArray();
 
-  // Premještanje atributa _id u id
   results.forEach((e) => {
     e.id = e._id;
     delete e._id;
   });
+
   res.json(results);
 });
 
