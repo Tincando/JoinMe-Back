@@ -52,6 +52,20 @@ app.get("/posts", async (req, res) => {
   res.json(results);
 });
 
+var mongo = require("mongodb");
+
+app.get("/events/:id", async (req, res) => {
+  // parametri rute dostupni su u req.params
+  let id = req.params.id;
+  // spoji se na bazu
+  let db = await connect();
+  // za dohvat jednog dokumenta koristimo `findOne()`
+  let document = await db
+    .collection("events")
+    .findOne({ _id: mongo.ObjectId(id) });
+  res.json(document);
+});
+
 app.get("/posts_memory", (req, res) => {
   let posts = storage.posts;
   let query = req.query;
@@ -73,5 +87,21 @@ app.post("/posts", (req, res) => {
   storage.posts.push(data);
 
   res.json(data);
+});
+
+app.post("/events", async (req, res) => {
+  let db = await connect();
+  let doc = req.body;
+  let result = await db.collection("events").insertOne(doc);
+  if (result.insertedCount == 1) {
+    res.json({
+      status: "success",
+      id: result.insertedId,
+    });
+  } else {
+    res.json({
+      status: "fail",
+    });
+  }
 });
 app.listen(port, () => console.log(`Slušam na portu ${port}!`));
