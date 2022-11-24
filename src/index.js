@@ -1,11 +1,15 @@
 import express from "express";
 import storage from "./memory_storage";
 import cors from "cors";
-
 import connect from "./db.js";
+import dotenv from "dotenv";
+import auth from "./auth.js";
+
+var mongo = require("mongodb");
 
 const app = express(); // instanciranje aplikacije
 const port = 3000; // port na kojem će web server slušati
+dotenv.config();
 
 app.use(cors(), express.json());
 
@@ -20,7 +24,7 @@ app.get("/posts", async (req, res) => {
     let pretraga = query._any;
     let terms = pretraga.split(" ");
 
-    let atributi = ["title", "createdBy"];
+    let atributi = ["title", "city"];
 
     selekcija = {
       $and: [],
@@ -51,8 +55,6 @@ app.get("/posts", async (req, res) => {
 
   res.json(results);
 });
-
-var mongo = require("mongodb");
 
 app.get("/events/:id", async (req, res) => {
   // parametri rute dostupni su u req.params
@@ -104,4 +106,59 @@ app.post("/events", async (req, res) => {
     });
   }
 });
+
+app.patch("/event/:id", async (req, res) => {
+  let doc = req.body;
+  delete doc._id;
+  let id = req.params.id;
+  let db = await connect();
+  let result = await db.collection("events").updateOne(
+    { _id: mongo.ObjectId(id) },
+    {
+      $set: doc,
+    }
+  );
+  if (result.modifiedCount == 1) {
+    res.json({
+      status: "success",
+      id: result.insertedId,
+    });
+  } else {
+    res.json({
+      status: "fail",
+    });
+  }
+});
+
+app.post("/auth", async (req, res) => {
+  let user = req.body;
+  let username = user.username;
+  let password = user.password;
+  try {
+    let result = await auth.authenticateUser(username, password);
+    res.status(201).json(result);
+  } catch (e) {
+    res.status(500).json({
+      error: e.message,
+    });
+  }
+});
+app.post("/user", async (req, res) => {
+  let user = req.body;
+  try {
+    let result = await auth.registerUser(user);
+    res.status(201).send();
+  } catch (e) {
+    res.status(500).json({
+      error: e.message,
+    });
+  }
+});
+
+// ne možeš pristupiti tajni ako ne prođeš `auth.verify
+app.get("/tajna", [auth.verify], async (req, res) => {
+  // nakon što se izvrši auth.verify middleware, imamo dostupan req.jwt objekt
+  res.status(200).send("tajna korisnika " + req.jwt.username);
+});
+
 app.listen(port, () => console.log(`Slušam na portu ${port}!`));
