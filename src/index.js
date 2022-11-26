@@ -1,17 +1,69 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import storage from "./memory_storage";
 import cors from "cors";
 import connect from "./db.js";
-import dotenv from "dotenv";
 import auth from "./auth.js";
 
 var mongo = require("mongodb");
 
 const app = express(); // instanciranje aplikacije
 const port = 3000; // port na kojem će web server slušati
-dotenv.config();
 
 app.use(cors(), express.json());
+
+app.get("/tajna", [auth.verify], async (req, res) => {
+  // nakon što se izvrši auth.verify middleware, imamo dostupan req.jwt objekt
+  res.status(200).send("tajna korisnika " + req.jwt.username);
+});
+
+app.patch("/user", [auth.verify], async (req, res) => {
+  let changes = req.body;
+  if (changes.new_password && changes.old_password) {
+    let result = await auth.changeUserPassword(
+      req.jwt.username,
+      changes.old_password,
+      changes.new_password
+    );
+    if (result) {
+      res.status(201).send();
+    } else {
+      res.status(500).json({ error: "cannot change password" });
+    }
+  } else {
+    res.status(400).json({ error: "unrecognized request" });
+  }
+});
+
+app.post("/auth", async (req, res) => {
+  let user = req.body;
+  let username = user.username;
+  let password = user.password;
+
+  try {
+    let result = await auth.authenticateUser(username, password);
+    res.status(201).json(result);
+  } catch (e) {
+    res.status(500).json({
+      error: e.message,
+    });
+  }
+});
+
+app.post("/user", async (req, res) => {
+  let user = req.body;
+
+  try {
+    let result = await auth.registerUser(user);
+    res.status(201).send();
+  } catch (e) {
+    res.status(500).json({
+      error: e.message,
+    });
+  }
+});
 
 app.get("/posts", async (req, res) => {
   let db = await connect();
@@ -128,37 +180,6 @@ app.patch("/event/:id", async (req, res) => {
       status: "fail",
     });
   }
-});
-
-app.post("/auth", async (req, res) => {
-  let user = req.body;
-  let username = user.username;
-  let password = user.password;
-  try {
-    let result = await auth.authenticateUser(username, password);
-    res.status(201).json(result);
-  } catch (e) {
-    res.status(500).json({
-      error: e.message,
-    });
-  }
-});
-app.post("/user", async (req, res) => {
-  let user = req.body;
-  try {
-    let result = await auth.registerUser(user);
-    res.status(201).send();
-  } catch (e) {
-    res.status(500).json({
-      error: e.message,
-    });
-  }
-});
-
-// ne možeš pristupiti tajni ako ne prođeš `auth.verify
-app.get("/tajna", [auth.verify], async (req, res) => {
-  // nakon što se izvrši auth.verify middleware, imamo dostupan req.jwt objekt
-  res.status(200).send("tajna korisnika " + req.jwt.username);
 });
 
 app.listen(port, () => console.log(`Slušam na portu ${port}!`));

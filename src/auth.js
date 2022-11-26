@@ -1,14 +1,18 @@
 import mongo from "mongodb";
 import connect from "./db.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
 // Kreiranje indeksa pri pokretanju aplikacije (ukoliko već ne postoji)
 (async () => {
   let db = await connect();
   db.collection("users").createIndex({ username: 1 }, { unique: true });
 })();
+
 export default {
   async registerUser(userData) {
     let db = await connect();
+
     let result;
     try {
       let doc = {
