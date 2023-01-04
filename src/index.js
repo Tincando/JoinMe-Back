@@ -57,6 +57,7 @@ app.post("/user", async (req, res) => {
 
   try {
     let result = await auth.registerUser(user);
+
     res.status(201).send();
   } catch (e) {
     res.status(500).json({
@@ -65,39 +66,51 @@ app.post("/user", async (req, res) => {
   }
 });
 
-app.get("/posts", async (req, res) => {
+app.get("/events", async (req, res) => {
   let db = await connect();
   let query = req.query;
 
-  let selekcija = {};
+  console.log(query);
 
-  if (query._any) {
-    // za upit: /posts?_all=pojam1 pojam2
-    let pretraga = query._any;
-    let terms = pretraga.split(" ");
-
-    let atributi = ["title", "city"];
-
-    selekcija = {
-      $and: [],
+  let filter = {};
+  if (query._city) {
+    filter = {
+      city: { $regex: query._city, $options: "i" },
     };
-
-    terms.forEach((term) => {
-      let or = {
-        $or: [],
-      };
-
-      atributi.forEach((atribut) => {
-        or.$or.push({
-          [atribut.toLocaleLowerCase()]: new RegExp(term.toLocaleLowerCase()),
-        });
-      });
-      selekcija.$and.push(or);
-    });
   }
-  console.log("Selekcija", selekcija);
+  if (query._category || query._city || query._age || query._day) {
+    filter.$and = [];
 
-  let cursor = await db.collection("events").find(selekcija);
+    if (query._category) {
+      filter.$and.push({
+        category: { $regex: query._category, $options: "i" },
+      });
+    }
+
+    if (query._city) {
+      filter.$and.push({
+        city: { $regex: query._city, $options: "i" },
+      });
+    }
+
+    if (query._age) {
+      filter.$and.push({
+        age: { $regex: query._age, $options: "i" },
+      });
+    }
+
+    if (query._day) {
+      filter.$and.push({
+        day: { $regex: query._day, $options: "i" },
+      });
+    }
+  }
+
+  console.log("Filter za Mongo", filter);
+  let cursor = await db
+    .collection("events")
+    .find(filter)
+    .sort({ postedAt: -1 });
   let results = await cursor.toArray();
 
   results.forEach((e) => {
