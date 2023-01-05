@@ -195,4 +195,20 @@ app.patch("/event/:id", async (req, res) => {
   }
 });
 
+app.post("/chat", async (req, res) => {
+  let db = await connect();
+  let doc = req.body;
+  let result = await db.collection("chat").insertOne(doc);
+  if (result.insertedCount == 1) {
+    res.json({
+      status: "success",
+      id: result.insertedId,
+    });
+  } else {
+    res.json({
+      status: "fail",
+    });
+  }
+});
+
 app.listen(port, () => console.log(`Slušam na portu ${port}!`));
