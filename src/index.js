@@ -118,6 +118,8 @@ app.get("/events", async (req, res) => {
     delete e._id;
   });
 
+  console.log(results);
+
   res.json(results);
 });
 
@@ -130,6 +132,7 @@ app.get("/events/:id", async (req, res) => {
   let document = await db
     .collection("events")
     .findOne({ _id: mongo.ObjectId(id) });
+
   res.json(document);
 });
 
@@ -210,5 +213,53 @@ app.post("/chat", async (req, res) => {
     });
   }
 });
+
+app.get("/chat/:id", async (req, res) => {
+  // parametri rute dostupni su u req.params
+  let id = req.params.id;
+
+  // spoji se na bazu
+  let db = await connect();
+  // za dohvat jednog dokumenta koristimo `findOne()`
+  const cursor = db.collection("chat").find({ event_id: id });
+
+  if ((await cursor.countDocuments) === 0) {
+    console.log("No documents found!");
+  }
+
+  let results = await cursor.toArray();
+
+  results.forEach((e) => {
+    e.id = e._id;
+    delete e._id;
+  });
+
+  res.json(results);
+});
+
+/*
+app.get("/chat:id", async (req, res) => {
+  let id = req.params.id;
+
+  let db = await connect();
+
+  let filter = { event_id: id };
+
+  console.log("Filter za Mongo", filter);
+
+  let cursor = await db.collection("chat").find(filter).sort({ postedAt: -1 });
+
+  let results = await cursor.toArray();
+
+  console.log(cursor);
+
+  results.forEach((e) => {
+    e.id = e._id;
+    delete e._id;
+  });
+
+  res.json(results);
+});
+*/
 
 app.listen(port, () => console.log(`Slušam na portu ${port}!`));
