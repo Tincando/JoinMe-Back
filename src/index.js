@@ -118,8 +118,6 @@ app.get("/events", async (req, res) => {
     delete e._id;
   });
 
-  console.log(results);
-
   res.json(results);
 });
 
@@ -221,7 +219,36 @@ app.get("/chat/:id", async (req, res) => {
   // spoji se na bazu
   let db = await connect();
   // za dohvat jednog dokumenta koristimo `findOne()`
-  const cursor = db.collection("chat").find({ event_id: id });
+  const cursor = db
+    .collection("chat")
+    .find({ event_id: id })
+    .sort({ postedAt: -1 });
+
+  if ((await cursor.countDocuments) === 0) {
+    console.log("No documents found!");
+  }
+
+  let results = await cursor.toArray();
+
+  results.forEach((e) => {
+    e.id = e._id;
+    delete e._id;
+  });
+
+  res.json(results);
+});
+
+app.get("/myevents/:email", async (req, res) => {
+  // parametri rute dostupni su u req.params
+  let email = req.params.email;
+
+  // spoji se na bazu
+  let db = await connect();
+  // za dohvat jednog dokumenta koristimo `findOne()`
+  const cursor = db
+    .collection("events")
+    .find({ createdBy: email })
+    .sort({ postedAt: -1 });
 
   if ((await cursor.countDocuments) === 0) {
     console.log("No documents found!");
