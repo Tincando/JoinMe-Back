@@ -181,7 +181,12 @@ app.patch("/event/:id", async (req, res) => {
   let result = await db.collection("events").updateOne(
     { _id: mongo.ObjectId(id) },
     {
-      $set: doc,
+      $set: {
+        people: doc.people,
+      },
+      $push: {
+        going: doc.going,
+      },
     }
   );
   if (result.modifiedCount == 1) {
