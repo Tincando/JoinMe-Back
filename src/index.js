@@ -247,13 +247,14 @@ app.get("/myevents/:email", async (req, res) => {
   // parametri rute dostupni su u req.params
   let email = req.params.email;
 
+  let filter = {
+    $or: [{ createdBy: email }, { going: email }],
+  };
+
   // spoji se na bazu
   let db = await connect();
   // za dohvat jednog dokumenta koristimo `findOne()`
-  const cursor = db
-    .collection("events")
-    .find({ createdBy: email })
-    .sort({ postedAt: -1 });
+  const cursor = db.collection("events").find(filter).sort({ postedAt: -1 });
 
   if ((await cursor.countDocuments) === 0) {
     console.log("No documents found!");
