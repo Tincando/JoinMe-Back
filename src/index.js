@@ -94,19 +94,60 @@ app.get("/events", async (req, res) => {
     }
 
     if (query._age) {
-      filter.$and.push({
-        age: { $regex: query._age, $options: "i" },
-      });
+      if (query._age == "18") {
+        filter.$and.push({
+          age: {
+            $gte: 18,
+            $lt: 30,
+          },
+        });
+      } else if (query._age == "30") {
+        filter.$and.push({
+          age: {
+            $gte: 30,
+            $lt: 50,
+          },
+        });
+      } else if (query._age == "50") {
+        filter.$and.push({
+          age: {
+            $gte: 50,
+            $lt: 60,
+          },
+        });
+      } else if (query._age == "60") {
+        filter.$and.push({
+          age: {
+            $gte: 60,
+            $lt: 100,
+          },
+        });
+      }
     }
 
     if (query._day) {
-      filter.$and.push({
-        day: { $regex: query._day, $options: "i" },
-      });
+      if (query._day == "day") {
+        filter.$and.push({
+          postedAt: {
+            $lt: new Date(),
+          },
+        });
+      }
+
+      if (query._day == "month") {
+        filter.$and.push({
+          postedAt: {
+            $lt: new Date(),
+          },
+        });
+      }
     }
   }
 
+  console.log();
+
   console.log("Filter za Mongo", filter);
+
   let cursor = await db
     .collection("events")
     .find(filter)
@@ -253,7 +294,7 @@ app.get("/myevents/:email", async (req, res) => {
 
   // spoji se na bazu
   let db = await connect();
-  // za dohvat jednog dokumenta koristimo `findOne()`
+
   const cursor = db.collection("events").find(filter).sort({ postedAt: -1 });
 
   if ((await cursor.countDocuments) === 0) {
