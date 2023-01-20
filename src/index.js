@@ -7,6 +7,8 @@ import cors from "cors";
 import connect from "./db.js";
 import auth from "./auth.js";
 
+var moment = require("moment");
+
 var mongo = require("mongodb");
 
 const app = express(); // instanciranje aplikacije
@@ -128,23 +130,35 @@ app.get("/events", async (req, res) => {
     if (query._day) {
       if (query._day == "day") {
         filter.$and.push({
-          postedAt: {
-            $lt: new Date(),
+          eventDate: {
+            $gte: moment().startOf("day").toDate(),
+            $lt: moment().endOf("day").toDate(),
           },
         });
-      }
-
-      if (query._day == "month") {
+      } else if (query._day == "week") {
         filter.$and.push({
-          postedAt: {
-            $lt: new Date(),
+          eventDate: {
+            $gte: moment().startOf("week").toDate(),
+            $lt: moment().endOf("week").toDate(),
+          },
+        });
+      } else if (query._day == "month") {
+        filter.$and.push({
+          eventDate: {
+            $gte: moment().startOf("month").toDate(),
+            $lt: moment().endOf("month").toDate(),
+          },
+        });
+      } else if (query._day == "year") {
+        filter.$and.push({
+          eventDate: {
+            $gte: moment().startOf("year").toDate(),
+            $lt: moment().endOf("year").toDate(),
           },
         });
       }
     }
   }
-
-  console.log();
 
   console.log("Filter za Mongo", filter);
 
@@ -201,6 +215,9 @@ app.post("/posts", (req, res) => {
 app.post("/events", async (req, res) => {
   let db = await connect();
   let doc = req.body;
+
+  doc.eventDate = new Date(doc.eventDate);
+
   let result = await db.collection("events").insertOne(doc);
   if (result.insertedCount == 1) {
     res.json({
