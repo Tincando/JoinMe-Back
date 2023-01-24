@@ -20,6 +20,9 @@ export default {
         // lozinku ćemo hashirati pomoću bcrypta
         password: await bcrypt.hash(userData.password, 8),
         name: userData.name,
+        location: userData.location,
+        age: userData.age,
+        profil_image: userData.profil_image,
       };
       result = await db.collection("users").insertOne(doc);
     } catch (e) {
@@ -51,6 +54,7 @@ export default {
       return {
         token,
         username: user.username,
+        profil_image: user.profil_image,
       };
     } else {
       throw new Error("Cannot authenticate");

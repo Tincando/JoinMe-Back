@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express from "express";
-import storage from "./memory_storage";
 import cors from "cors";
 import connect from "./db.js";
 import auth from "./auth.js";
