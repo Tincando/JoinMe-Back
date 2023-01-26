@@ -11,7 +11,7 @@ var moment = require("moment");
 var mongo = require("mongodb");
 
 const app = express(); // instanciranje aplikacije
-const port = 3000; // port na kojem će web server slušati
+const PORT = process.env.PORT || 3000; // port na kojem će web server slušati
 
 app.use(cors(), express.json());
 
@@ -321,4 +321,4 @@ app.get("/myevents/:email", async (req, res) => {
   res.json(results);
 });
 
-app.listen(port, () => console.log(`Slušam na portu ${port}!`));
+app.listen(PORT, () => console.log(`Slušam na portu ${PORT}!`));
