@@ -1,9 +1,10 @@
 const { MongoClient } = require("mongodb");
+import dotenv from "dotenv";
+dotenv.config();
 
 var mongo = require("mongodb").MongoClient;
 
-let connection_string =
-  "mongodb+srv://admin:admin@cluster0.hlvz389.mongodb.net/?retryWrites=true&w=majority";
+let connection_string = process.env.CONNECTION_STRING;
 
 let client = new MongoClient(connection_string, {
   useNewUrlParser: true,
